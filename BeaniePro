@@ -11,6 +11,18 @@
         uiScale: 1.0
     };
 
+    // --- هذا هو الجزء المسؤول عن حل مشكلة الدخول والتعليق ---
+    window.directJoin = (pId, accessCode) => {
+        if (!accessCode) return;
+        if (typeof Roblox !== 'undefined' && Roblox.GameLauncher) {
+            // نمرر الكود المباشر للمحرك الرسمي
+            Roblox.GameLauncher.joinPrivateGame(pId, accessCode);
+        } else {
+            // حل احتياطي في حال تعطل المحرك
+            window.location.href = `roblox-player:1+launchmode:play+gameinfo:${accessCode}+placelauncherurl:https%3A%2F%2Fassetgame.roblox.com%2Fgame%2FPlaceLauncher.ashx%3Frequest%3DRequestPrivateGame%26placeId%3D${pId}%26accessCode%3D${accessCode}`;
+        }
+    };
+
     const createUI = () => {
         const old = document.getElementById('br-lite-root'); if (old) old.remove();
         const root = document.createElement('div'); 
@@ -110,7 +122,7 @@
                 <div>
                     <div style="font-weight:900; font-size:20px; display:flex; align-items:center; gap:8px;">
                         Beanie<span style="color:var(--main-accent);">Pro</span>
-                        <span style="color:var(--main-accent); font-size:9px; font-weight:bold; opacity:0.8;">v1.1 MADE BY ZAYD</span>
+                        <span style="color:var(--main-accent); font-size:9px; font-weight:bold; opacity:0.8;">v1.3 MADE BY ZAYD</span>
                     </div>
                     <div style="font-size:9px; color:#444; font-weight:bold; letter-spacing:1px;">SERVERS EXPLORER</div>
                 </div>
@@ -128,17 +140,17 @@
             </div>
             <div id="p-list" class="page active-page"><div id="list-cont"></div></div>
             <div id="p-sett" class="page">
-                <div class="setting-card" style="animation-delay: 0.1s">
+                <div class="setting-card">
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:bold;"><span>UI Scale</span> <span style="color:var(--main-accent);" id="v-scale">${state.uiScale}x</span></div>
                     <input type="range" id="i-scale" min="0.5" max="1.5" step="0.01" value="${state.uiScale}">
                 </div>
-                <div class="setting-card" style="animation-delay: 0.2s">
+                <div class="setting-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Theme Color</span> <input type="color" id="i-color" value="${state.mainColor}" style="border:none; width:30px; height:30px; cursor:pointer; background:none;"></div>
                 </div>
-                <div class="setting-card" style="animation-delay: 0.3s">
+                <div class="setting-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Show All Servers</span> <div id="tg-all" class="tgl ${state.showAllServers?'on':'off'}">${state.showAllServers?'ON':'OFF'}</div></div>
                 </div>
-                <div class="setting-card" style="animation-delay: 0.4s">
+                <div class="setting-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Hide Owner In-Game</span> <div id="tg-own" class="tgl ${state.hideOwner?'on':'off'}">${state.hideOwner?'ON':'OFF'}</div></div>
                 </div>
             </div>
@@ -213,6 +225,8 @@
         cont.innerHTML = filtered.map((s, i) => {
             const isOwnerInside = s.playerTokens?.includes(s.owner?.id) || (s.players?.some(p => p.id === s.owner?.id));
             const ownerName = s.owner?.name || 'Owner';
+            // نستخدم الكود المباشر accessCode إذا وجد، وإلا نستخدم vipServerId
+            const code = s.accessCode || s.vipServerId;
             
             return `
                 <div class="srv-card" style="animation-delay: ${i * 0.05}s; ${isOwnerInside ? 'border-color: var(--main-accent);' : ''}">
@@ -224,7 +238,7 @@
                             ${ownerName} • ${isOwnerInside ? 'OWNER IN GAME' : 'OFFLINE'}
                         </div>
                     </div>
-                    <button class="join-btn" onclick="Roblox.GameLauncher.joinPrivateGame(${placeId}, '${s.vipServerId}')">JOIN</button>
+                    <button class="join-btn" onclick="window.directJoin(${placeId}, '${code}')">JOIN</button>
                 </div>
             `;
         }).join('');
@@ -232,6 +246,7 @@
 
     const fetchServers = async () => {
         try {
+            // إضافة credentials: 'include' لحل خطأ الـ 401 (Unauthorized)
             const res = await fetch(`https://games.roblox.com/v1/games/${placeId}/private-servers?limit=100`, { credentials: 'include' });
             const data = await res.json();
             if (data?.data) { state.servers = data.data; renderServers(); }
@@ -242,7 +257,3 @@
     fetchServers();
     setInterval(fetchServers, 15000);
 })();
-
-
-// made by zayd
-// version 1.3
