@@ -2,12 +2,17 @@
     'use strict';
 
     const placeId = '109983668079237';
+    
+    // جلب اللون المخزن سابقاً أو استخدام اللون الافتراضي
+    const savedColor = localStorage.getItem('beanie-pro-color') || '#2ed573';
+
     let state = { 
         servers: [], 
         showAllServers: false, 
         hideOwner: false,
+        showOnlyOwners: false,
         currentPage: 'list',
-        mainColor: '#2ed573',
+        mainColor: savedColor, // استخدام اللون المحفوظ
         uiScale: 1.0
     };
 
@@ -71,35 +76,30 @@
             .page { display: none; flex: 1; flex-direction: column; padding: 15px; overflow-y: auto; scroll-behavior: smooth; }
             .active-page { display: flex; }
 
-            .active-page#p-list .srv-card {
-                animation: srvIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
-            }
-            @keyframes srvIn {
-                from { opacity: 0; transform: translateY(30px) rotateX(-15deg); }
-                to { opacity: 1; transform: translateY(0) rotateX(0); }
-            }
-
-            .active-page#p-sett .setting-card {
-                animation: settIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) backwards;
-            }
-            @keyframes settIn {
-                0% { opacity: 0; transform: translateX(40px) rotateY(-25deg); }
-                100% { opacity: 1; transform: translateX(0) rotateY(0); }
-            }
-
             .srv-card { 
                 background: #111; margin-bottom: 15px; padding: 18px; border-radius: 22px; 
                 display: flex; justify-content: space-between; align-items: center; 
                 border: 1px solid #1a1a1a; transition: all 0.3s ease;
+                animation: srvEntry 0.5s ease backwards;
             }
+            
+            @keyframes srvEntry {
+                from { opacity: 0; transform: translateX(20px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+
             .srv-card:hover { transform: scale(1.03); border-color: var(--main-accent); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
 
             .owner-tag { font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 10px; margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; background: var(--main-accent); color: #000; box-shadow: 0 0 15px var(--main-accent); transition: 0.3s; }
             .tag-offline { background: #1a1a1a; color: #555; border: 1px solid #222; box-shadow: none; }
             
-            .dot { width: 6px; height: 6px; background: #000; border-radius: 50%; animation: pulse 1.2s infinite; }
-            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
+            .owner-tag:not(.tag-offline) { animation: glowPulse 2s infinite; }
+            @keyframes glowPulse {
+                0% { box-shadow: 0 0 5px var(--main-accent); }
+                50% { box-shadow: 0 0 20px var(--main-accent); }
+                100% { box-shadow: 0 0 5px var(--main-accent); }
+            }
+            
             .join-btn { background: #fff; color: #000; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.3s; }
             .join-btn:hover { background: var(--main-accent); transform: scale(1.1); box-shadow: 0 0 20px var(--main-accent); }
 
@@ -111,6 +111,10 @@
             .tgl.off { background: #1a1a1a; color: #ff4757; border-color: #ff4757; }
 
             input[type=range] { width: 100%; accent-color: var(--main-accent); cursor: pointer; }
+
+            .page::-webkit-scrollbar { width: 5px; }
+            .page::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+            .page::-webkit-scrollbar-thumb:hover { background: var(--main-accent); }
         `;
         document.head.appendChild(style);
 
@@ -119,7 +123,7 @@
                 <div>
                     <div style="font-weight:900; font-size:20px; display:flex; align-items:center; gap:8px;">
                         Beanie<span style="color:var(--main-accent);">Pro</span>
-                        <span style="color:var(--main-accent); font-size:9px; font-weight:bold; opacity:0.8;">v1.3 MADE BY ZAYD</span>
+                        <span style="color:var(--main-accent); font-size:9px; font-weight:bold; opacity:0.8;">v2 MADE BY ZAYD</span>
                     </div>
                     <div style="font-size:9px; color:#444; font-weight:bold; letter-spacing:1px;">SERVERS EXPLORER</div>
                 </div>
@@ -128,7 +132,10 @@
                         <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                     </button>
                     <button id="nav-btn" class="icon-btn" title="Settings">
-                        <svg id="nav-svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <svg id="nav-svg-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
                     </button>
                     <button id="close-x-btn" class="icon-btn close-x-svg" title="Close">
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -145,15 +152,19 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Theme Color</span> <input type="color" id="i-color" value="${state.mainColor}" style="border:none; width:30px; height:30px; cursor:pointer; background:none;"></div>
                 </div>
                 <div class="setting-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Show Only Owners</span> <div id="tg-owners" class="tgl ${state.showOnlyOwners?'on':'off'}">${state.showOnlyOwners?'ON':'OFF'}</div></div>
+                </div>
+                <div class="setting-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Show All Servers</span> <div id="tg-all" class="tgl ${state.showAllServers?'on':'off'}">${state.showAllServers?'ON':'OFF'}</div></div>
                 </div>
                 <div class="setting-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Hide Owner In-Game</span> <div id="tg-own" class="tgl ${state.hideOwner?'on':'off'}">${state.hideOwner?'ON':'OFF'}</div></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>Hide Owners</span> <div id="tg-own" class="tgl ${state.hideOwner?'on':'off'}">${state.hideOwner?'ON':'OFF'}</div></div>
                 </div>
             </div>
         `;
         document.body.appendChild(root);
 
+        // --- Logic Events ---
         document.getElementById('close-x-btn').onclick = () => {
             root.classList.add('br-exit-anim');
             setTimeout(() => root.remove(), 500);
@@ -174,6 +185,7 @@
         document.getElementById('i-color').oninput = (e) => {
             state.mainColor = e.target.value;
             document.documentElement.style.setProperty('--main-accent', state.mainColor);
+            localStorage.setItem('beanie-pro-color', state.mainColor); // حفظ اللون في المتصفح
             renderServers();
         };
 
@@ -183,13 +195,12 @@
                 lp.classList.remove('active-page');
                 sp.classList.add('active-page');
                 state.currentPage = 'sett';
-                navIcon.innerHTML = '<path d="M19 12H5M12 19l-7-7 7-7"></path>';
+                navIcon.innerHTML = '<path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2.5"></path>';
             } else {
                 sp.classList.remove('active-page');
                 lp.classList.add('active-page');
                 state.currentPage = 'list';
                 navIcon.innerHTML = '<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>';
-                renderServers();
             }
         };
 
@@ -207,6 +218,13 @@
             renderServers();
         };
 
+        document.getElementById('tg-owners').onclick = function() {
+            state.showOnlyOwners = !state.showOnlyOwners;
+            this.className = `tgl ${state.showOnlyOwners?'on':'off'}`;
+            this.innerText = state.showOnlyOwners?'ON':'OFF';
+            renderServers();
+        };
+
         document.getElementById('re-btn').onclick = fetchServers;
     };
 
@@ -214,12 +232,13 @@
         const cont = document.getElementById('list-cont'); if (!cont) return;
         let filtered = state.servers.filter(s => {
             const isOwnerInside = s.playerTokens?.includes(s.owner?.id) || (s.players?.some(p => p.id === s.owner?.id));
+            if (state.showOnlyOwners && !isOwnerInside) return false;
             if (!state.showAllServers && (s.playing || 0) === 0) return false;
             if (state.hideOwner && isOwnerInside) return false;
             return true;
         });
 
-        cont.innerHTML = filtered.map((s, i) => {
+        cont.innerHTML = filtered.length ? filtered.map((s, i) => {
             const isOwnerInside = s.playerTokens?.includes(s.owner?.id) || (s.players?.some(p => p.id === s.owner?.id));
             const ownerName = s.owner?.name || 'Owner';
             const code = s.accessCode || s.vipServerId;
@@ -237,7 +256,7 @@
                     <button class="join-btn" onclick="window.directJoin(${placeId}, '${code}')">JOIN</button>
                 </div>
             `;
-        }).join('');
+        }).join('') : '<div style="text-align:center; margin-top:50px; opacity:0.3; font-weight:bold;">NO SERVERS FOUND</div>';
     };
 
     const fetchServers = async () => {
@@ -254,6 +273,5 @@
 })();
 
 
-
-
-// made by zayd 1.3v
+// made by zayd
+// final version v2
