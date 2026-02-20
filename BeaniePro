@@ -3,7 +3,7 @@
 
     const placeId = '109983668079237';
     
-    // جلب اللون المخزن سابقاً أو استخدام اللون الافتراضي
+    // Fetch stored color or use default
     const savedColor = localStorage.getItem('beanie-pro-color') || '#2ed573';
 
     let state = { 
@@ -12,7 +12,7 @@
         hideOwner: false,
         showOnlyOwners: false,
         currentPage: 'list',
-        mainColor: savedColor, // استخدام اللون المحفوظ
+        mainColor: savedColor,
         uiScale: 1.0
     };
 
@@ -123,7 +123,7 @@
                 <div>
                     <div style="font-weight:900; font-size:20px; display:flex; align-items:center; gap:8px;">
                         Beanie<span style="color:var(--main-accent);">Pro</span>
-                        <span style="color:var(--main-accent); font-size:9px; font-weight:bold; opacity:0.8;">v2 MADE BY ZAYD</span>
+                        <span style="color:var(--main-accent); font-size:9px; font-weight:bold; opacity:0.8;">v2 BY ZAYD</span>
                     </div>
                     <div style="font-size:9px; color:#444; font-weight:bold; letter-spacing:1px;">SERVERS EXPLORER</div>
                 </div>
@@ -185,7 +185,7 @@
         document.getElementById('i-color').oninput = (e) => {
             state.mainColor = e.target.value;
             document.documentElement.style.setProperty('--main-accent', state.mainColor);
-            localStorage.setItem('beanie-pro-color', state.mainColor); // حفظ اللون في المتصفح
+            localStorage.setItem('beanie-pro-color', state.mainColor);
             renderServers();
         };
 
@@ -272,6 +272,4 @@
     setInterval(fetchServers, 15000);
 })();
 
-
-// made by zayd
 // final version v2
